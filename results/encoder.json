@@ -1,0 +1,83 @@
+{
+  "model": "answerdotai/ModernBERT-base (fine-tuned, PyTorch, mps)",
+  "train_calls": 673,
+  "test_calls": 313,
+  "epochs": 4,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.7873,
+      "val_macro_f1": 0.516,
+      "minutes": 5.8
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.4738,
+      "val_macro_f1": 0.529,
+      "minutes": 12.1
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.3812,
+      "val_macro_f1": 0.496,
+      "minutes": 18.2
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.2706,
+      "val_macro_f1": 0.509,
+      "minutes": 23.5
+    }
+  ],
+  "thresholds": {
+    "passed": 0.1,
+    "task_success": 0.55,
+    "missed_handoff": 0.5,
+    "hallucinated": 0.1,
+    "injection_resisted": 0.55
+  },
+  "ms_per_call": 105.4,
+  "metrics": {
+    "passed": {
+      "n": 313,
+      "positives": 118,
+      "accuracy": 0.39,
+      "precision": 0.382,
+      "recall": 1.0,
+      "f1": 0.553
+    },
+    "task_success": {
+      "n": 162,
+      "positives": 89,
+      "accuracy": 0.525,
+      "precision": 0.54,
+      "recall": 0.91,
+      "f1": 0.678
+    },
+    "missed_handoff": {
+      "n": 313,
+      "positives": 31,
+      "accuracy": 0.901,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "hallucinated": {
+      "n": 313,
+      "positives": 28,
+      "accuracy": 0.565,
+      "precision": 0.103,
+      "recall": 0.5,
+      "f1": 0.171
+    },
+    "injection_resisted": {
+      "n": 37,
+      "positives": 26,
+      "accuracy": 0.703,
+      "precision": 0.703,
+      "recall": 1.0,
+      "f1": 0.825
+    },
+    "macro_f1": 0.445
+  }
+}

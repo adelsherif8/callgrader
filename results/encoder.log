@@ -1,0 +1,110 @@
+W1103 14:09:48.244000 7494 .venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/134 [00:00<?, ?it/s]Loading weights: 100%|██████████| 134/134 [00:00<00:00, 53172.82it/s]
+[transformers] [1mModernBertModel LOAD REPORT[0m from: answerdotai/ModernBERT-base
+Key               | Status     |  | 
+------------------+------------+--+-
+decoder.bias      | UNEXPECTED |  | 
+head.norm.weight  | UNEXPECTED |  | 
+head.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+{'epoch': 1, 'batch': 50, 'of': 674, 'loss': 0.9386, 'minutes': 0.6}
+{'epoch': 1, 'batch': 100, 'of': 674, 'loss': 0.9404, 'minutes': 0.9}
+{'epoch': 1, 'batch': 150, 'of': 674, 'loss': 0.9071, 'minutes': 1.3}
+{'epoch': 1, 'batch': 200, 'of': 674, 'loss': 0.8926, 'minutes': 1.7}
+{'epoch': 1, 'batch': 250, 'of': 674, 'loss': 0.9143, 'minutes': 2.0}
+{'epoch': 1, 'batch': 300, 'of': 674, 'loss': 0.9035, 'minutes': 2.4}
+{'epoch': 1, 'batch': 350, 'of': 674, 'loss': 0.9018, 'minutes': 2.9}
+{'epoch': 1, 'batch': 400, 'of': 674, 'loss': 0.8989, 'minutes': 3.3}
+{'epoch': 1, 'batch': 450, 'of': 674, 'loss': 0.872, 'minutes': 3.6}
+{'epoch': 1, 'batch': 500, 'of': 674, 'loss': 0.8558, 'minutes': 4.0}
+{'epoch': 1, 'batch': 550, 'of': 674, 'loss': 0.8392, 'minutes': 4.3}
+{'epoch': 1, 'batch': 600, 'of': 674, 'loss': 0.817, 'minutes': 4.7}
+{'epoch': 1, 'batch': 650, 'of': 674, 'loss': 0.7959, 'minutes': 5.1}
+{'epoch': 1, 'train_loss': 0.7873, 'val_macro_f1': 0.516, 'minutes': 5.8}
+{'epoch': 2, 'batch': 50, 'of': 674, 'loss': 0.6117, 'minutes': 6.3}
+{'epoch': 2, 'batch': 100, 'of': 674, 'loss': 0.4787, 'minutes': 6.7}
+{'epoch': 2, 'batch': 150, 'of': 674, 'loss': 0.6039, 'minutes': 7.2}
+{'epoch': 2, 'batch': 200, 'of': 674, 'loss': 0.6006, 'minutes': 7.6}
+{'epoch': 2, 'batch': 250, 'of': 674, 'loss': 0.5519, 'minutes': 8.0}
+{'epoch': 2, 'batch': 300, 'of': 674, 'loss': 0.5411, 'minutes': 8.5}
+{'epoch': 2, 'batch': 350, 'of': 674, 'loss': 0.4982, 'minutes': 8.9}
+{'epoch': 2, 'batch': 400, 'of': 674, 'loss': 0.5068, 'minutes': 9.3}
+{'epoch': 2, 'batch': 450, 'of': 674, 'loss': 0.5219, 'minutes': 9.8}
+{'epoch': 2, 'batch': 500, 'of': 674, 'loss': 0.5241, 'minutes': 10.2}
+{'epoch': 2, 'batch': 550, 'of': 674, 'loss': 0.5167, 'minutes': 10.6}
+{'epoch': 2, 'batch': 600, 'of': 674, 'loss': 0.4964, 'minutes': 11.0}
+{'epoch': 2, 'batch': 650, 'of': 674, 'loss': 0.48, 'minutes': 11.5}
+{'epoch': 2, 'train_loss': 0.4738, 'val_macro_f1': 0.529, 'minutes': 12.1}
+{'epoch': 3, 'batch': 50, 'of': 674, 'loss': 0.4518, 'minutes': 12.6}
+{'epoch': 3, 'batch': 100, 'of': 674, 'loss': 0.3662, 'minutes': 13.0}
+{'epoch': 3, 'batch': 150, 'of': 674, 'loss': 0.4972, 'minutes': 13.3}
+{'epoch': 3, 'batch': 200, 'of': 674, 'loss': 0.48, 'minutes': 14.1}
+{'epoch': 3, 'batch': 250, 'of': 674, 'loss': 0.4637, 'minutes': 14.6}
+{'epoch': 3, 'batch': 300, 'of': 674, 'loss': 0.439, 'minutes': 15.0}
+{'epoch': 3, 'batch': 350, 'of': 674, 'loss': 0.4146, 'minutes': 15.4}
+{'epoch': 3, 'batch': 400, 'of': 674, 'loss': 0.4253, 'minutes': 15.8}
+{'epoch': 3, 'batch': 450, 'of': 674, 'loss': 0.4034, 'minutes': 16.1}
+{'epoch': 3, 'batch': 500, 'of': 674, 'loss': 0.3817, 'minutes': 16.5}
+{'epoch': 3, 'batch': 550, 'of': 674, 'loss': 0.3682, 'minutes': 16.9}
+{'epoch': 3, 'batch': 600, 'of': 674, 'loss': 0.3881, 'minutes': 17.2}
+{'epoch': 3, 'batch': 650, 'of': 674, 'loss': 0.3718, 'minutes': 17.6}
+{'epoch': 3, 'train_loss': 0.3812, 'val_macro_f1': 0.496, 'minutes': 18.2}
+{'epoch': 4, 'batch': 50, 'of': 674, 'loss': 0.2184, 'minutes': 18.7}
+{'epoch': 4, 'batch': 100, 'of': 674, 'loss': 0.3099, 'minutes': 19.1}
+{'epoch': 4, 'batch': 150, 'of': 674, 'loss': 0.2966, 'minutes': 19.4}
+{'epoch': 4, 'batch': 200, 'of': 674, 'loss': 0.2817, 'minutes': 19.8}
+{'epoch': 4, 'batch': 250, 'of': 674, 'loss': 0.2848, 'minutes': 20.1}
+{'epoch': 4, 'batch': 300, 'of': 674, 'loss': 0.3001, 'minutes': 20.5}
+{'epoch': 4, 'batch': 350, 'of': 674, 'loss': 0.2888, 'minutes': 20.9}
+{'epoch': 4, 'batch': 400, 'of': 674, 'loss': 0.2794, 'minutes': 21.3}
+{'epoch': 4, 'batch': 450, 'of': 674, 'loss': 0.27, 'minutes': 21.6}
+{'epoch': 4, 'batch': 500, 'of': 674, 'loss': 0.2768, 'minutes': 21.9}
+{'epoch': 4, 'batch': 550, 'of': 674, 'loss': 0.2728, 'minutes': 22.3}
+{'epoch': 4, 'batch': 600, 'of': 674, 'loss': 0.2745, 'minutes': 22.6}
+{'epoch': 4, 'batch': 650, 'of': 674, 'loss': 0.2752, 'minutes': 22.9}
+{'epoch': 4, 'train_loss': 0.2706, 'val_macro_f1': 0.509, 'minutes': 23.5}
+{
+  "passed": {
+    "n": 313,
+    "positives": 118,
+    "accuracy": 0.39,
+    "precision": 0.382,
+    "recall": 1.0,
+    "f1": 0.553
+  },
+  "task_success": {
+    "n": 162,
+    "positives": 89,
+    "accuracy": 0.525,
+    "precision": 0.54,
+    "recall": 0.91,
+    "f1": 0.678
+  },
+  "missed_handoff": {
+    "n": 313,
+    "positives": 31,
+    "accuracy": 0.901,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "hallucinated": {
+    "n": 313,
+    "positives": 28,
+    "accuracy": 0.565,
+    "precision": 0.103,
+    "recall": 0.5,
+    "f1": 0.171
+  },
+  "injection_resisted": {
+    "n": 37,
+    "positives": 26,
+    "accuracy": 0.703,
+    "precision": 0.703,
+    "recall": 1.0,
+    "f1": 0.825
+  },
+  "macro_f1": 0.445
+}
