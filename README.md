@@ -18,7 +18,7 @@ Three graders are compared on the same calls, so the question "do we need a big 
 
 5-fold cross-validation grouped by scenario: every scenario is tested once, by a model trained without it.
 F1 per label and macro F1, pooled over all 1,260 out-of-fold predictions, with a bootstrap 95% interval.
-Run on a free Colab T4 (`colab/train_and_serve.ipynb`); raw numbers in `results/cv.json`.
+Run on a free Colab T4 (`colab/train_and_serve.ipynb`); numbers in `results/cv-summary-2026-11-04.json`.
 
 | Grader | passed | task_success | missed_handoff | hallucinated | injection_resisted | **Macro F1** | 95% CI |
 |---|---|---|---|---|---|---|---|
