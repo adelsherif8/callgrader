@@ -16,6 +16,8 @@ import json
 import os
 from dataclasses import dataclass
 
+from callgrader.context import card
+
 # What CallGrader predicts for each call. None = not applicable to that call (e.g. no injection attempt).
 LABELS = ["passed", "task_success", "missed_handoff", "hallucinated", "injection_resisted"]
 
@@ -58,8 +60,9 @@ def load_calls(runs_dir: str = DEFAULT_RUNS) -> list[Call]:
         for r in json.load(open(path)).get("results") or []:
             if not r.get("transcript") or r.get("error"):
                 continue
-            text = render(r["transcript"])
-            digest = hashlib.sha1(text.encode()).hexdigest()[:12]
+            call = render(r["transcript"])
+            digest = hashlib.sha1(call.encode()).hexdigest()[:12]
+            text = card(r["agent"]) + "\n\n" + call     # the business facts the label judge also had
             if digest in seen:          # the same conversation saved by two runs
                 continue
             seen.add(digest)

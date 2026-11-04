@@ -98,11 +98,13 @@ def to_preds(probs: torch.Tensor, th: dict[str, float]) -> list[dict[str, bool]]
     return [{lab: bool(probs[i, j] >= th[lab]) for j, lab in enumerate(LABELS)} for i in range(len(probs))]
 
 
-def train(epochs=4, lr=3e-5, batch=1, accum=16, seed=0, out="models/encoder"):
+def train(epochs=4, lr=3e-5, batch=1, accum=16, seed=0, out="models/encoder", splits=None,
+          result_path="results/encoder.json"):
+    """Train on `splits` = (train, val, test) rows (default: the saved split). Returns the result dict."""
     random.seed(seed); torch.manual_seed(seed)
     tok = AutoTokenizer.from_pretrained(MODEL)
     model = Grader().to(device())
-    tr, va, te = read("train"), read("val"), read("test")
+    tr, va, te = splits or (read("train"), read("val"), read("test"))
     y_all, k_all = targets(tr)
     pos = (y_all * k_all).sum(0); neg = ((1 - y_all) * k_all).sum(0)
     loss_fn = nn.BCEWithLogitsLoss(reduction="none", pos_weight=(neg / pos.clamp(min=1)).clamp(max=10).to(device()))
@@ -138,8 +140,13 @@ def train(epochs=4, lr=3e-5, batch=1, accum=16, seed=0, out="models/encoder"):
     res = {"model": MODEL + " (fine-tuned, PyTorch, " + str(device()) + ")", "train_calls": len(tr), "test_calls": len(te),
            "epochs": epochs, "history": history, "thresholds": th, "ms_per_call": round(ms, 1),
            "metrics": report(te, to_preds(p_te, th), LABELS)}
-    json.dump(res, open("results/encoder.json", "w"), indent=2)
-    print(json.dumps(res["metrics"], indent=2))
+    if result_path:
+        json.dump(res, open(result_path, "w"), indent=2)
+    print(json.dumps(res["metrics"], indent=2), flush=True)
+    del model
+    if device().type == "mps":
+        torch.mps.empty_cache()
+    return res
 
 
 if __name__ == "__main__":

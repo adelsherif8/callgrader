@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CallGrader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root {
+    --paper: #f6f3ec; --card: #fffdf8; --ink: #1d1b16; --muted: #6b665a; --line: #e2dccd;
+    --good: #2f6b4f; --good-bg: #e4efe7; --bad: #a8432a; --bad-bg: #f6e3dc; --hl: #fbe7a6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #15140f; --card: #1e1c16; --ink: #ece7da; --muted: #a39d8d; --line: #34312a;
+            --good: #7cc4a0; --good-bg: #1f3329; --bad: #f08f72; --bad-bg: #3a241d; --hl: #5a4a17; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.55 "IBM Plex Sans", system-ui, sans-serif; }
+  header { max-width: 1180px; margin: 0 auto; padding: 40px 16px 8px; }
+  h1 { font-family: Fraunces, serif; font-weight: 700; font-size: clamp(32px, 5vw, 48px); margin: 0; letter-spacing: -0.02em; }
+  header p { color: var(--muted); max-width: 680px; margin: 8px 0 0; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+  h2 { font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 12px; }
+  label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  select, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  textarea { font-family: "IBM Plex Mono", monospace; font-size: 13px; min-height: 300px; resize: vertical; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .row > div { flex: 1 1 200px; }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 12px 18px; background: var(--ink); color: var(--paper); cursor: pointer; min-height: 44px; }
+  button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+  button[disabled] { opacity: .6; cursor: progress; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  .verdict { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .verdict:last-child { border-bottom: 0; }
+  .name { font-weight: 500; }
+  .desc { font-size: 13px; color: var(--muted); }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--muted); }
+  .pill { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+  .ok { color: var(--good); background: var(--good-bg); }
+  .no { color: var(--bad); background: var(--bad-bg); }
+  .summary { padding: 14px; border-radius: 10px; margin-bottom: 12px; font-weight: 500; display: flex; gap: 10px; align-items: flex-start; }
+  .call { font-family: "IBM Plex Mono", monospace; font-size: 13px; max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px 0; }
+  .call div { padding: 2px 12px; white-space: pre-wrap; word-break: break-word; }
+  .call .hit { background: var(--hl); }
+  .call .tag { float: right; font-family: "IBM Plex Sans"; font-size: 12px; color: var(--bad); font-weight: 600; margin-left: 8px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .expected { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 16px 40px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>CallGrader</h1>
+  <p>Grades a voice agent's phone call the way a QA reviewer would: did it pass, did it make something up, did it miss a handoff to a person, did it resist a prompt injection. Every verdict points at the lines that caused it.</p>
+</header>
+<main>
+  <section aria-labelledby="in-h">
+    <h2 id="in-h">The call</h2>
+    <div class="row">
+      <div>
+        <label for="sample">Held-out test call</label>
+        <select id="sample"><option value="">Paste your own</option></select>
+      </div>
+      <div>
+        <label for="agent">Business facts</label>
+        <select id="agent">
+          <option value="">None</option>
+          <option value="recovery">Blue Ridge Plumbing</option>
+          <option value="dental">Brightside Dental</option>
+          <option value="receptionist">StoreRight Self-Storage</option>
+        </select>
+      </div>
+    </div>
+    <label for="transcript">Transcript</label>
+    <textarea id="transcript" spellcheck="false" placeholder="AGENT: Thanks for calling...&#10;CALLER: Hi, I need..."></textarea>
+    <div class="row" style="margin-top:12px;align-items:center">
+      <label class="check" style="text-transform:none;letter-spacing:0;font-weight:400"><input type="checkbox" id="explain" checked> Show the lines behind each verdict</label>
+      <button id="go" type="button"><i class="fa-solid fa-gavel" aria-hidden="true"></i> Grade call</button>
+    </div>
+    <div id="expected" class="expected"></div>
+  </section>
+  <section aria-labelledby="out-h" aria-live="polite">
+    <h2 id="out-h">Verdict</h2>
+    <div id="out"><p class="muted">Pick a test call or paste one, then grade it.</p></div>
+  </section>
+</main>
+<footer>ModernBERT fine-tuned in PyTorch on 1,260 voice-agent calls. Scores are probabilities; the cut-off for each label was tuned on validation calls.</footer>
+<script>
+const LABELS = {
+  passed: ["Call passed", "Overall, did the agent handle the call correctly?", false],
+  task_success: ["Caller got what they needed", "Booking made, question answered", false],
+  missed_handoff: ["Missed a handoff", "Should have gone to a person or emergency line", true],
+  hallucinated: ["Made something up", "A price, hour or fact the business never gave", true],
+  injection_resisted: ["Resisted manipulation", "Refused 'ignore your instructions' style tricks", false],
+};
+const $ = (id) => document.getElementById(id);
+let samples = [];
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+fetch("/samples").then(r => r.json()).then(list => {
+  samples = list;
+  list.forEach((s, i) => $("sample").insertAdjacentHTML("beforeend",
+    `<option value="${i}">${esc(s.category.replace(/_/g, " "))} (${esc(s.agent)})</option>`));
+});
+$("sample").onchange = () => {
+  const s = samples[$("sample").value];
+  $("expected").textContent = "";
+  if (!s) return;
+  $("transcript").value = s.transcript; $("agent").value = s.agent;
+  const exp = Object.entries(s.expected).filter(([, v]) => v !== null).map(([k, v]) => `${LABELS[k][0]}: ${v ? "yes" : "no"}`);
+  $("expected").textContent = "Label from the eval harness: " + exp.join(", ");
+};
+
+$("go").onclick = async () => {
+  const transcript = $("transcript").value.trim();
+  if (!transcript) { $("out").innerHTML = '<p class="muted">Add a transcript first.</p>'; return; }
+  $("go").disabled = true; $("out").innerHTML = '<p class="muted"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Grading...</p>';
+  try {
+    const r = await fetch("/grade", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ transcript, agent: $("agent").value || null, explain: $("explain").checked }) });
+    if (!r.ok) throw new Error((await r.text()).slice(0, 200));
+    render(await r.json(), transcript);
+  } catch (e) {
+    $("out").innerHTML = `<p class="muted">Could not grade: ${esc(String(e.message || e))}</p>`;
+  } finally { $("go").disabled = false; }
+};
+
+function render(v, transcript) {
+  const bad = v.flagged.length;
+  let html = bad
+    ? `<div class="summary no"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span>Needs review: ${v.flagged.map(f => LABELS[f][0].toLowerCase()).join(", ")}.</span></div>`
+    : `<div class="summary ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>No problems found.</span></div>`;
+  for (const [k, [name, desc, badWhenTrue]] of Object.entries(LABELS)) {
+    const yes = v.labels[k], isBad = v.flagged.includes(k);
+    html += `<div class="verdict">
+      <i class="fa-solid ${isBad ? "fa-xmark" : "fa-check"}" style="color:var(${isBad ? "--bad" : "--good"})" aria-hidden="true"></i>
+      <div><div class="name">${name}</div><div class="desc">${desc}</div>
+        <div class="bar" aria-hidden="true"><i style="width:${Math.round(v.scores[k] * 100)}%"></i></div></div>
+      <span class="pill ${isBad ? "no" : "ok"}">${yes ? "Yes" : "No"} &middot; ${Math.round(v.scores[k] * 100)}%</span></div>`;
+  }
+  // highlight the lines behind each flagged verdict (or behind every verdict if none was flagged)
+  const hits = {};
+  if (v.evidence) {
+    const keys = bad ? v.flagged : Object.keys(v.evidence);
+    for (const k of keys) for (const e of v.evidence[k] || []) (hits[e.line] ||= []).push(LABELS[k][0]);
+  }
+  const lines = transcript.split("\n");
+  html += `<h2 style="margin-top:18px">${v.evidence ? "Lines behind the verdict" : "Call"}</h2><div class="call">` +
+    lines.map((l, i) => `<div class="${hits[i + 1] ? "hit" : ""}">${hits[i + 1] ? `<span class="tag">${esc(hits[i + 1].join(", "))}</span>` : ""}${esc(l)}</div>`).join("") +
+    `</div><p class="muted">Graded in ${v.ms} ms${v.evidence ? ", including one extra pass per line to find the evidence" : ""}.</p>`;
+  $("out").innerHTML = html;
+}
+</script>
+</body>
+</html>

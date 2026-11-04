@@ -2,3 +2,8 @@
 models/
 __pycache__/
 *.pyc
+callgrader-colab.zip
+callgrader-results.zip
+results/graded.jsonl
+results/*.log
+RESUME.md
