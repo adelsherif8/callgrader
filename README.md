@@ -16,23 +16,30 @@ Three graders are compared on the same calls, so the question "do we need a big 
 <!-- RESULTS -->
 ## Results
 
-5-fold cross-validation grouped by scenario: every scenario is tested once, by a model that never saw it.
-Macro F1 over the five labels, pooled over all 1,260 out-of-fold predictions, with a bootstrap 95% interval.
+5-fold cross-validation grouped by scenario: every scenario is tested once, by a model trained without it.
+F1 per label and macro F1, pooled over all 1,260 out-of-fold predictions, with a bootstrap 95% interval.
+Run on a free Colab T4 (`colab/train_and_serve.ipynb`); raw numbers in `results/cv.json`.
 
-| Grader | Macro F1 | 95% CI | Fold mean ± sd |
-|---|---|---|---|
-| Majority answer (floor) | 0.41 | 0.40–0.42 | 0.39 ± 0.05 |
-| TF-IDF + logistic regression | 0.41 | 0.39–0.42 | 0.39 ± 0.05 |
-| ModernBERT fine-tuned | _running_ | | |
+| Grader | passed | task_success | missed_handoff | hallucinated | injection_resisted | **Macro F1** | 95% CI |
+|---|---|---|---|---|---|---|---|
+| Always the common answer | 0.43 | 0.75 | 0.00 | 0.00 | 0.88 | **0.41** | 0.40–0.42 |
+| TF-IDF + logistic regression | 0.43 | 0.66 | 0.00 | 0.00 | 0.94 | **0.41** | 0.39–0.42 |
+| ModernBERT fine-tuned | **0.64** | 0.73 | **0.14** | **0.18** | 0.85 | **0.51** | 0.49–0.52 |
 
-The LLM is trained and served on a free Colab T4 (`colab/train_and_serve.ipynb`); its row and the vLLM speed-up are
-added from `results/llm.json` and `results/vllm.json`.
+ModernBERT's per-fold macro F1: 0.45, 0.40, 0.47, 0.53, 0.48. Its interval does not overlap the baselines'.
+The LoRA-tuned Qwen row and the vLLM speed-up are added from `results/llm.json` and `results/vllm.json` once that
+run completes.
 <!-- /RESULTS -->
 
 ## What the results say
 
-- **Word counts learn almost nothing here.** The scikit-learn model ties with always giving the most common answer.
+- **Word counts learn almost nothing here; a fine-tuned transformer does.** The scikit-learn model ties with always
+  giving the most common answer (0.41). ModernBERT reaches 0.51 and is the only grader that catches any made-up
+  answers or missed handoffs at all.
   Whether "we're open 24/7" is a lie depends on the business's facts and the conversation, not on which words appear.
+- **The rare labels are still the hard part.** F1 of 0.14 on missed handoffs and 0.18 on made-up answers is far from
+  production quality. They come from few scenarios (5 and 25 of 54) and noisy labels; the next step is more scenarios
+  and a few hundred hand-checked calls, not a bigger model.
 - **A grader can only judge what it's told.** The labels came from a judge that read each agent's instructions. A
   transcript alone can't show that a price was invented, so every call starts with a short **fact card** for its
   business (`callgrader/context.py`): the allowed prices, hours, and the emergency and handoff rules.

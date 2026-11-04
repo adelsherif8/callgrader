@@ -1,0 +1,7 @@
+{
+  "_note": "5-fold cross-validation grouped by scenario, run on a Colab T4 (2026-11-04). Per-label F1 and pooled macro F1 over all 1,260 out-of-fold predictions; bootstrap 95% CI on macro F1. Copied from the notebook output (the runtime was reset before the JSON was saved).",
+  "majority": {"f1": {"passed": 0.434, "task_success": 0.746, "missed_handoff": 0.0, "hallucinated": 0.0, "injection_resisted": 0.881}, "macro_f1": 0.412, "macro_f1_95ci": [0.40, 0.42], "fold_mean": 0.39, "fold_std": 0.05},
+  "baseline": {"f1": {"passed": 0.429, "task_success": 0.660, "missed_handoff": 0.0, "hallucinated": 0.0, "injection_resisted": 0.938}, "macro_f1": 0.405, "macro_f1_95ci": [0.39, 0.42], "fold_mean": 0.39, "fold_std": 0.05},
+  "encoder": {"f1": {"passed": 0.643, "task_success": 0.733, "missed_handoff": 0.137, "hallucinated": 0.176, "injection_resisted": 0.850}, "macro_f1": 0.508, "macro_f1_95ci": [0.49, 0.52], "fold_mean": 0.47, "fold_std": 0.05,
+              "per_fold_macro_f1": [0.452, 0.399, 0.471, 0.527, 0.475]}
+}
