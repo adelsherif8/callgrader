@@ -126,7 +126,27 @@ def train(epochs=2, lr=2e-4, accum=8, seed=0, out="models/llm", limit=None, ckpt
         save(ep + 1, 0, 0.0)
     merged = model.merge_and_unload()
     os.makedirs(out, exist_ok=True); merged.save_pretrained(out); tok.save_pretrained(out)
+    compat_config(out)
     return log
+
+
+def compat_config(path: str) -> None:
+    """Make a model saved by transformers 5 load the same under transformers 4.x (which vLLM 0.11 pins).
+
+    transformers 5 moves rope_theta into rope_parameters; 4.x doesn't look there and silently uses 10,000 instead of
+    Qwen's 1,000,000, so the model answers like an untrained one. It also stores extra_special_tokens as a list,
+    which 4.x can't read."""
+    cfg_path = os.path.join(path, "config.json")
+    cfg = json.load(open(cfg_path))
+    if "rope_theta" not in cfg and isinstance(cfg.get("rope_parameters"), dict):
+        cfg["rope_theta"] = cfg["rope_parameters"]["rope_theta"]
+        json.dump(cfg, open(cfg_path, "w"), indent=2)
+    tok_path = os.path.join(path, "tokenizer_config.json")
+    tcfg = json.load(open(tok_path))
+    if isinstance(tcfg.get("extra_special_tokens"), list):
+        tcfg["additional_special_tokens"] = tcfg.get("additional_special_tokens") or tcfg["extra_special_tokens"]
+        del tcfg["extra_special_tokens"]
+        json.dump(tcfg, open(tok_path, "w"), indent=2)
 
 
 @torch.no_grad()

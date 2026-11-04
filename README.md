@@ -37,16 +37,20 @@ scenarios it never saw. The other two rows are the same test calls, from `result
 |---|---|---|---|---|---|---|---|
 | TF-IDF + logistic regression | 0.51 | **0.73** | 0.00 | 0.00 | 0.71 | **0.39** | ~1 ms (CPU) |
 | ModernBERT fine-tuned | **0.55** | 0.68 | 0.00 | **0.17** | **0.83** | **0.45** | ~105 ms (M3) |
-| Qwen2.5-0.5B + LoRA (merged) | 0.52 | 0.72 | 0.00 | 0.00 | 0.60 | **0.37** | ~1.5 s (T4, transformers) |
+| Qwen2.5-0.5B + LoRA (merged) | 0.52 | 0.72 | 0.00 | 0.00 | 0.60 | **0.37** | ~1.5 s (T4, transformers); 29 ms with vLLM |
 
 The LLM always writes valid JSON (100% of calls) and is close on task success, but it never flags a missed handoff
 or a made-up answer: with 3% and 9% positives in training it learned to say `false`. A model 3x the size of
-ModernBERT, 15x slower per call, did worse. Numbers in `results/llm.json`.
+ModernBERT did worse. Numbers in `results/llm.json`.
 
-vLLM serving is not reported yet. vLLM 0.11 pins transformers 4.57, and that version reads the merged model (saved
-by transformers 5.22) differently: under 4.57 both vLLM and plain `generate` answer like the untuned base model
-(44% valid JSON). Speed and accuracy from that run would not describe this model, so they are left out until the
-model is re-saved in a format both versions read the same way.
+**Served with vLLM** (same merged model, same prompts, greedy, fp16, all 313 calls submitted at once), it grades
+**34.9 calls per second, 28.6 ms per call: 53x faster** than one-at-a-time `transformers` (1.52 s), with the same
+answers: macro F1 0.366 vs 0.367, valid JSON 100%. Numbers in `results/vllm.json`.
+
+One trap found on the way: vLLM 0.11 pins transformers 4.57, but the model was saved by transformers 5.22, which
+moves `rope_theta` into a nested `rope_parameters` block. 4.57 doesn't look there and silently falls back to
+10,000 instead of Qwen's 1,000,000, so the model answered like an untrained one (43% valid JSON, macro F1 0.21).
+`llm.compat_config()` writes `rope_theta` back at the top level when the model is saved.
 <!-- /RESULTS -->
 
 ## What the results say
@@ -56,7 +60,7 @@ model is re-saved in a format both versions read the same way.
   answers or missed handoffs at all.
   Whether "we're open 24/7" is a lie depends on the business's facts and the conversation, not on which words appear.
 - **A bigger model is not the fix.** The LoRA-tuned Qwen (0.5B parameters) scored 0.37 on the same test calls where
-  ModernBERT scored 0.45, at about 15x the time per call. Both struggle on the same rare labels.
+  ModernBERT scored 0.45. vLLM makes the LLM fast (29 ms per call on a T4) but not more accurate. Both struggle on the same rare labels.
 - **The rare labels are still the hard part.** F1 of 0.14 on missed handoffs and 0.18 on made-up answers is far from
   production quality. They come from few scenarios (5 and 25 of 54) and noisy labels; the next step is more scenarios
   and a few hundred hand-checked calls, not a bigger model.
@@ -124,7 +128,7 @@ converted from `transcript_with_tool_calls`, graded with evidence, and stored (`
 
 Open `colab/train_and_serve.ipynb` in Colab ([direct link](https://colab.research.google.com/github/adelsherif8/callgrader/blob/main/colab/train_and_serve.ipynb)), pick a T4 GPU and run
 all. Training takes about 31 min on a T4 and checkpoints to Google Drive, so a reset resumes where it stopped.
-It trains with LoRA, evaluates with transformers, then serves the merged model with vLLM (see the note under Results).
+It trains with LoRA, evaluates with transformers, then serves the merged model with vLLM and writes the speed comparison. Run Runtime > Restart session after the vLLM install, before the vLLM cell.
 
 ## Layout
 
@@ -132,7 +136,7 @@ It trains with LoRA, evaluates with transformers, then serves the merged model w
 callgrader/  data.py context.py baseline.py encoder.py llm.py cv.py metrics.py explain.py retell.py compare.py
 serve/       app.py (FastAPI) static/index.html (demo page)
 colab/       train_and_serve.ipynb
-tests/       13 tests: rendering, splits, folds, Retell conversion, signatures, evidence, API with a stub model
+tests/       15 tests: rendering, splits, folds, Retell conversion, signatures, evidence, API with a stub model, resume, transformers 4/5 config
 docs/        guide.html (plain-English guide to every part) MODEL_CARD.md
 ```
 

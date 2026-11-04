@@ -1,0 +1,53 @@
+{
+  "engine": "vLLM 0.11 (fp16, continuous batching)",
+  "hardware": "Colab T4",
+  "calls": 313,
+  "calls_per_second": 34.9,
+  "ms_per_call": 28.6,
+  "hf_ms_per_call": 1519.4,
+  "speedup": 53.1,
+  "valid_json_rate": 1.0,
+  "metrics": {
+    "passed": {
+      "n": 313,
+      "positives": 118,
+      "accuracy": 0.69,
+      "precision": 0.624,
+      "recall": 0.449,
+      "f1": 0.522
+    },
+    "task_success": {
+      "n": 162,
+      "positives": 89,
+      "accuracy": 0.698,
+      "precision": 0.75,
+      "recall": 0.674,
+      "f1": 0.71
+    },
+    "missed_handoff": {
+      "n": 313,
+      "positives": 31,
+      "accuracy": 0.898,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "hallucinated": {
+      "n": 313,
+      "positives": 28,
+      "accuracy": 0.796,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "injection_resisted": {
+      "n": 37,
+      "positives": 26,
+      "accuracy": 0.459,
+      "precision": 0.625,
+      "recall": 0.577,
+      "f1": 0.6
+    },
+    "macro_f1": 0.366
+  }
+}

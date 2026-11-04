@@ -153,7 +153,7 @@ a { color: var(--blue); }
         <tr><td>serve/app.py</td><td>The FastAPI service: <code>/grade</code>, <code>/retell/webhook</code>, <code>/calls</code>, <code>/samples</code>, and the demo page.</td></tr>
         <tr><td>serve/static/index.html</td><td>The demo page: pick a test call, grade it, see the highlighted lines.</td></tr>
         <tr><td>colab/train_and_serve.ipynb</td><td>Free Colab GPU notebook: trains the LLM, evaluates it, serves it with vLLM and times it.</td></tr>
-        <tr><td>tests/</td><td>13 tests: rendering, splits, folds, Retell conversion, signatures, evidence lines, the API with a stub model.</td></tr>
+        <tr><td>tests/</td><td>15 tests: rendering, splits, folds, Retell conversion, signatures, evidence lines, the API with a stub model.</td></tr>
         <tr><td>Dockerfile, .github/workflows/ci.yml</td><td>CPU container for the API; CI runs the tests and the scikit-learn cross-validation on every push.</td></tr>
       </tbody>
     </table></div>
@@ -211,7 +211,7 @@ a { color: var(--blue); }
         <div class="term"><h4>Webhook</h4><p>A URL another service calls when something happens, instead of you asking it repeatedly.</p><p class="here">Retell calls <code>/retell/webhook</code> when a call has been analysed; the call is graded and stored.</p></div>
         <div class="term"><h4>HMAC signature and replay window</h4><p>The sender signs the request body with a shared secret; the receiver recomputes it to prove who sent it. A timestamp inside the signature stops old requests being replayed.</p><p class="here">Retell's <code>X-Retell-Signature</code> is checked against your API key, and anything older than 5 minutes is rejected.</p></div>
         <div class="term"><h4>vLLM and continuous batching</h4><p>A fast LLM server. It keeps the GPU busy by adding new requests to the running batch as others finish, and stores attention memory in pages (PagedAttention).</p><p class="here">The Colab notebook serves the fine-tuned Qwen with vLLM and compares its speed with plain transformers on the same calls.</p></div>
-        <div class="term"><h4>Docker and CI</h4><p>Docker packages the app and its dependencies into one image that runs anywhere. CI runs the tests automatically on every push.</p><p class="here">A CPU-only image; GitHub Actions runs the 13 tests and the scikit-learn cross-validation.</p></div>
+        <div class="term"><h4>Docker and CI</h4><p>Docker packages the app and its dependencies into one image that runs anywhere. CI runs the tests automatically on every push.</p><p class="here">A CPU-only image; GitHub Actions runs the 15 tests and the scikit-learn cross-validation.</p></div>
       </div>
     </div>
   </section>
@@ -225,11 +225,12 @@ a { color: var(--blue); }
         <tr><td>Always the most common answer</td><td>0.41 (0.40–0.42)</td><td>5-fold CV</td><td>instant</td></tr>
         <tr><td>TF-IDF + logistic regression</td><td>0.41 (0.39–0.42)</td><td>5-fold CV</td><td>about 1 ms</td></tr>
         <tr class="best"><td>ModernBERT fine-tuned</td><td>0.51 (0.49–0.52)</td><td>5-fold CV, Colab T4</td><td>about 105 ms (Mac GPU)</td></tr>
-        <tr><td>Qwen 0.5B + LoRA</td><td>0.37</td><td>one test split (313 calls), Colab T4</td><td>about 1.5 s (T4)</td></tr>
+        <tr><td>Qwen 0.5B + LoRA</td><td>0.37</td><td>one test split (313 calls), Colab T4</td><td>1.5 s; 29 ms with vLLM (T4)</td></tr>
       </tbody>
     </table></div>
     <div class="callout"><p><b>Reading the table:</b> the numbers in brackets are 95% confidence intervals. ModernBERT's range doesn't overlap the baselines', so the gain is real. Per label it catches made-up answers (F1 0.18) and missed handoffs (0.14) where both baselines score zero, and lifts "passed" from 0.43 to 0.64.</p></div>
-    <div class="callout"><p><b>The LLM row:</b> fine-tuning Qwen five times over was too slow for a free GPU, so it was trained once and scored on the 313 test calls. On those same calls ModernBERT scores 0.45 and TF-IDF 0.39. The LLM always answers in valid JSON but never flags a missed handoff or a made-up answer, so a model three times bigger and fifteen times slower did worse. Fast serving with vLLM is not reported yet: the vLLM version used reads the saved model differently from the version that trained it, so its numbers would not describe this model.</p></div>
+    <div class="callout"><p><b>The LLM row:</b> fine-tuning Qwen five times over was too slow for a free GPU, so it was trained once and scored on the 313 test calls. On those same calls ModernBERT scores 0.45 and TF-IDF 0.39. The LLM always answers in valid JSON but never flags a missed handoff or a made-up answer, so a model three times bigger did worse. Served with vLLM it grades 35 calls a second (29 ms each), 53 times faster than plain transformers, with the same answers (macro F1 0.366 vs 0.367).</p></div>
+    <div class="callout"><p><b>A bug worth telling in an interview:</b> under vLLM the model first answered like an untrained one. vLLM installs an older transformers (4.57) than the one that saved the model (5.22). The newer version stores a setting called <code>rope_theta</code>, which tells the model how far apart words are, in a new place; the older one didn't find it and silently used 10,000 instead of 1,000,000. Comparing the saved weights (identical) and then the config files found it. The fix writes the setting where both versions look.</p></div>
     <h3 style="margin-top:18px">What the numbers already teach</h3>
     <p><b>Bigger is not better here.</b> The 0.5-billion-parameter LLM lost to the 150-million-parameter ModernBERT on the same calls. The rare labels need more and cleaner examples, not a larger model.</p>
     <p><b>Word counts are not enough.</b> The scikit-learn model ties with always-say-the-common-answer. Judging a call needs the meaning of the conversation, which is why the transformer models exist.</p>
@@ -240,7 +241,7 @@ a { color: var(--blue); }
   <section id="interview">
     <h2>Talking about it</h2>
     <h3>60-second version</h3>
-    <p class="pitch">"I run voice agents for small businesses, and nobody listens to their calls. So I built CallGrader: it reads a call transcript and flags made-up answers, missed handoffs and prompt-injection failures, and highlights the sentence that caused it. I built the dataset from 1,260 eval calls, compared a scikit-learn baseline, a fine-tuned ModernBERT in PyTorch and a LoRA-tuned Qwen LLM, using cross-validation grouped by scenario so test calls are truly unseen. The small encoder beat the LLM, at a fifteenth of the cost per call. It plugs into Retell with a signed webhook, so every real call gets graded automatically."</p>
+    <p class="pitch">"I run voice agents for small businesses, and nobody listens to their calls. So I built CallGrader: it reads a call transcript and flags made-up answers, missed handoffs and prompt-injection failures, and highlights the sentence that caused it. I built the dataset from 1,260 eval calls, compared a scikit-learn baseline, a fine-tuned ModernBERT in PyTorch and a LoRA-tuned Qwen LLM, using cross-validation grouped by scenario so test calls are truly unseen. The small encoder beat the LLM; vLLM made the LLM 53 times faster but not more accurate. It plugs into Retell with a signed webhook, so every real call gets graded automatically."</p>
     <h3 style="margin-top:20px">Questions you'll get</h3>
     <div class="qa">
       <div><b>Why not just ask GPT to grade each call?</b><p>You can, and that's how the labels were made. But it costs money per call and adds latency. A small fine-tuned model runs on your own server for free, and the comparison table shows how much accuracy you give up for that.</p></div>
@@ -255,7 +256,7 @@ a { color: var(--blue); }
   <section id="jobs">
     <h2>What jobs this answers</h2>
     <div class="jobs">
-      <div class="job"><h3>AI / ML engineer</h3><ul><li>Fine-tuning (full and LoRA)</li><li>PyTorch training loops</li><li>scikit-learn baselines</li><li>Evaluation, cross-validation, F1</li><li>Model choice: accuracy vs cost per call</li></ul></div>
+      <div class="job"><h3>AI / ML engineer</h3><ul><li>Fine-tuning (full and LoRA)</li><li>PyTorch training loops</li><li>scikit-learn baselines</li><li>Evaluation, cross-validation, F1</li><li>vLLM model serving (53x speed-up)</li><li>Model choice: accuracy vs cost per call</li></ul></div>
       <div class="job"><h3>AI voice agents</h3><ul><li>Retell webhook integration</li><li>Call QA and monitoring</li><li>Hallucination and handoff detection</li><li>Prompt-injection testing</li></ul></div>
       <div class="job"><h3>Back end / MLOps</h3><ul><li>FastAPI service</li><li>Webhook signature security</li><li>Docker, GitHub Actions CI</li><li>Model packaging and versioning</li></ul></div>
       <div class="job"><h3>Front end</h3><ul><li>Accessible demo page</li><li>Evidence highlighting UI</li><li>Light and dark themes</li></ul></div>
