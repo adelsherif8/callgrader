@@ -1,0 +1,59 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct + LoRA r16 (merged)",
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.0787
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.0409
+    }
+  ],
+  "hardware": "Colab T4",
+  "ms_per_call": 1519.4,
+  "valid_json_rate": 1.0,
+  "metrics": {
+    "passed": {
+      "n": 313,
+      "positives": 118,
+      "accuracy": 0.681,
+      "precision": 0.6,
+      "recall": 0.458,
+      "f1": 0.519
+    },
+    "task_success": {
+      "n": 162,
+      "positives": 89,
+      "accuracy": 0.698,
+      "precision": 0.738,
+      "recall": 0.697,
+      "f1": 0.717
+    },
+    "missed_handoff": {
+      "n": 313,
+      "positives": 31,
+      "accuracy": 0.895,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "hallucinated": {
+      "n": 313,
+      "positives": 28,
+      "accuracy": 0.78,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "injection_resisted": {
+      "n": 37,
+      "positives": 26,
+      "accuracy": 0.459,
+      "precision": 0.625,
+      "recall": 0.577,
+      "f1": 0.6
+    },
+    "macro_f1": 0.367
+  }
+}

@@ -27,8 +27,26 @@ Run on a free Colab T4 (`colab/train_and_serve.ipynb`); numbers in `results/cv-s
 | ModernBERT fine-tuned | **0.64** | 0.73 | **0.14** | **0.18** | 0.85 | **0.51** | 0.49–0.52 |
 
 ModernBERT's per-fold macro F1: 0.45, 0.40, 0.47, 0.53, 0.48. Its interval does not overlap the baselines'.
-The LoRA-tuned Qwen row and the vLLM speed-up are added from `results/llm.json` and `results/vllm.json` once that
-run completes.
+
+**The LLM, on one fixed test split.** Fine-tuning Qwen2.5-0.5B five times over is too slow for a free GPU, so it was
+trained once (train + val, 947 calls, 2 epochs, 31 min on a Colab T4) and scored on the 313 test calls, from
+scenarios it never saw. The other two rows are the same test calls, from `results/baseline.json` and
+`results/encoder.json` (trained on Nov 3, before the fact-card fixes):
+
+| Grader (single split, 313 calls) | passed | task_success | missed_handoff | hallucinated | injection_resisted | **Macro F1** | Speed per call |
+|---|---|---|---|---|---|---|---|
+| TF-IDF + logistic regression | 0.51 | **0.73** | 0.00 | 0.00 | 0.71 | **0.39** | ~1 ms (CPU) |
+| ModernBERT fine-tuned | **0.55** | 0.68 | 0.00 | **0.17** | **0.83** | **0.45** | ~105 ms (M3) |
+| Qwen2.5-0.5B + LoRA (merged) | 0.52 | 0.72 | 0.00 | 0.00 | 0.60 | **0.37** | ~1.5 s (T4, transformers) |
+
+The LLM always writes valid JSON (100% of calls) and is close on task success, but it never flags a missed handoff
+or a made-up answer: with 3% and 9% positives in training it learned to say `false`. A model 3x the size of
+ModernBERT, 15x slower per call, did worse. Numbers in `results/llm.json`.
+
+vLLM serving is not reported yet. vLLM 0.11 pins transformers 4.57, and that version reads the merged model (saved
+by transformers 5.22) differently: under 4.57 both vLLM and plain `generate` answer like the untuned base model
+(44% valid JSON). Speed and accuracy from that run would not describe this model, so they are left out until the
+model is re-saved in a format both versions read the same way.
 <!-- /RESULTS -->
 
 ## What the results say
@@ -37,6 +55,8 @@ run completes.
   giving the most common answer (0.41). ModernBERT reaches 0.51 and is the only grader that catches any made-up
   answers or missed handoffs at all.
   Whether "we're open 24/7" is a lie depends on the business's facts and the conversation, not on which words appear.
+- **A bigger model is not the fix.** The LoRA-tuned Qwen (0.5B parameters) scored 0.37 on the same test calls where
+  ModernBERT scored 0.45, at about 15x the time per call. Both struggle on the same rare labels.
 - **The rare labels are still the hard part.** F1 of 0.14 on missed handoffs and 0.18 on made-up answers is far from
   production quality. They come from few scenarios (5 and 25 of 54) and noisy labels; the next step is more scenarios
   and a few hundred hand-checked calls, not a bigger model.
@@ -103,8 +123,8 @@ converted from `transcript_with_tool_calls`, graded with evidence, and stored (`
 ### LLM + vLLM (free Colab GPU)
 
 Open `colab/train_and_serve.ipynb` in Colab ([direct link](https://colab.research.google.com/github/adelsherif8/callgrader/blob/main/colab/train_and_serve.ipynb)), pick a T4 GPU and run
-all (~25 min). It trains with LoRA, evaluates with transformers, then serves the merged model with vLLM and writes
-the throughput comparison.
+all. Training takes about 31 min on a T4 and checkpoints to Google Drive, so a reset resumes where it stopped.
+It trains with LoRA, evaluates with transformers, then serves the merged model with vLLM (see the note under Results).
 
 ## Layout
 
