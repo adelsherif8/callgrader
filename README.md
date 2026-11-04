@@ -95,7 +95,7 @@ converted from `transcript_with_tool_calls`, graded with evidence, and stored (`
 
 ### LLM + vLLM (free Colab GPU)
 
-`scripts/colab_bundle.sh` zips the package and data. Open `colab/train_and_serve.ipynb` on a T4, upload the zip, run
+Open `colab/train_and_serve.ipynb` in Colab ([direct link](https://colab.research.google.com/github/adelsherif8/callgrader/blob/main/colab/train_and_serve.ipynb)), pick a T4 GPU and run
 all (~25 min). It trains with LoRA, evaluates with transformers, then serves the merged model with vLLM and writes
 the throughput comparison.
 
