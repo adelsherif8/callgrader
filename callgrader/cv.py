@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import statistics
 
@@ -78,7 +79,9 @@ def run_encoder(tr, va, te):
     return preds
 
 
-def cross_validate(name, fn, rows, k=K, log=print):
+def cross_validate(name, fn, rows, k=K, log=print, ckpt=None):
+    """With `ckpt` (a folder, e.g. on Google Drive) each finished fold's predictions are saved, and a rerun skips the
+    folds already done, so a reset only loses the fold that was running."""
     fold_of = folds(rows, k)
     oof: list[tuple[dict, dict]] = []
     per_fold = []
@@ -86,7 +89,15 @@ def cross_validate(name, fn, rows, k=K, log=print):
         te = [r for r in rows if fold_of[r["scenario"]] == f]
         va = [r for r in rows if fold_of[r["scenario"]] == (f + 1) % k]       # threshold tuning (encoder)
         tr = [r for r in rows if fold_of[r["scenario"]] not in (f, (f + 1) % k)]
-        preds = fn(tr, va, te)
+        done = os.path.join(ckpt, f"{name}-fold{f + 1}.json") if ckpt else None
+        if done and os.path.exists(done):
+            preds = json.load(open(done))
+            log({"model": name, "fold": f + 1, "resumed": True})
+        else:
+            preds = fn(tr, va, te)
+            if done:
+                os.makedirs(ckpt, exist_ok=True)
+                json.dump(preds, open(done + ".tmp", "w")); os.replace(done + ".tmp", done)
         per_fold.append(report(te, preds, LABELS)["macro_f1"])
         oof += list(zip(te, preds))
         log({"model": name, "fold": f + 1, "test_calls": len(te), "macro_f1": per_fold[-1]})
@@ -98,12 +109,14 @@ def cross_validate(name, fn, rows, k=K, log=print):
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(); ap.add_argument("--encoder", action="store_true"); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("--encoder", action="store_true")
+    ap.add_argument("--ckpt", help="folder for per-fold checkpoints (e.g. on Google Drive); reruns skip finished folds")
+    a = ap.parse_args()
     rows = all_rows()
     out = {"majority": cross_validate("majority", lambda tr, va, te: majority(tr + va, te), rows),
            "baseline": cross_validate("tfidf+logreg", run_baseline, rows)}
     if a.encoder:
-        out["encoder"] = cross_validate("modernbert", run_encoder, rows, log=lambda d: print(d, flush=True))
+        out["encoder"] = cross_validate("modernbert", run_encoder, rows, log=lambda d: print(d, flush=True), ckpt=a.ckpt)
     json.dump(out, open("results/cv.json" if a.encoder else "results/cv-fast.json", "w"), indent=2)
     for v in out.values():
         print(v["model"], v["metrics"]["macro_f1"], "folds", v["fold_mean"], "+/-", v["fold_std"], "CI", v["macro_f1_95ci"])

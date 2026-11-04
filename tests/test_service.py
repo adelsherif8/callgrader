@@ -105,3 +105,20 @@ def test_retell_webhook_ignores_other_events(client):
     body = json.dumps({"event": "call_started", "call": RETELL_CALL}).encode()
     r = client.post("/retell/webhook", content=body, headers={"x-retell-signature": sign(body, "key_test")})
     assert r.json() == {"ok": True, "graded": False}
+
+
+def test_cross_validation_resumes_finished_folds_from_checkpoints(tmp_path):
+    from callgrader.cv import cross_validate
+    rows = [{"scenario": f"s{i}", "category": "c", "labels": {l: bool(i % 2) for l in LABELS}} for i in range(10)]
+    calls = []
+
+    def fn(tr, va, te):
+        calls.append(len(te))
+        return [{l: True for l in LABELS} for _ in te]
+
+    first = cross_validate("m", fn, rows, k=5, log=lambda d: None, ckpt=str(tmp_path))
+    assert len(calls) == 5 and len(list(tmp_path.glob("m-fold*.json"))) == 5
+    (tmp_path / "m-fold3.json").unlink()                     # pretend the reset happened during fold 3
+    again = cross_validate("m", fn, rows, k=5, log=lambda d: None, ckpt=str(tmp_path))
+    assert len(calls) == 6                                    # only fold 3 was trained again
+    assert again["metrics"] == first["metrics"]

@@ -63,8 +63,12 @@ def parse(text: str) -> dict[str, bool]:
     return {k: d.get(k) is True for k in LABELS}
 
 
-def train(epochs=2, lr=2e-4, accum=8, seed=0, out="models/llm", limit=None):
+def train(epochs=2, lr=2e-4, accum=8, seed=0, out="models/llm", limit=None, ckpt=None, ckpt_every=100):
+    """LoRA fine-tune. With `ckpt` (a folder, e.g. on Google Drive) the adapter, optimizer, scheduler and position
+    are saved every `ckpt_every` calls; calling train() again with the same folder resumes from the last save
+    instead of starting over, so a Colab reset costs minutes, not the whole run."""
     random.seed(seed); torch.manual_seed(seed)
+    from peft import get_peft_model_state_dict, set_peft_model_state_dict
     tok = AutoTokenizer.from_pretrained(BASE)
     # bf16 base weights halve memory (2 GB -> 1 GB) where supported; only the small LoRA adapters are trained
     model = AutoModelForCausalLM.from_pretrained(BASE, dtype=dtype()).to(device())
@@ -77,10 +81,32 @@ def train(epochs=2, lr=2e-4, accum=8, seed=0, out="models/llm", limit=None):
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr)
     total = epochs * len(tr) // accum + 1
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=lr, total_steps=total, pct_start=0.05)
-    t0, log = time.perf_counter(), []
-    for ep in range(epochs):
-        model.train(); random.shuffle(tr); running = 0.0
-        for n, r in enumerate(tr):
+    start_ep, start_n, log, running = 0, 0, [], 0.0
+    state_file = os.path.join(ckpt, "state.pt") if ckpt else None
+    if state_file and os.path.exists(state_file):
+        st = torch.load(state_file, map_location=device(), weights_only=False)
+        set_peft_model_state_dict(model, st["adapter"]); opt.load_state_dict(st["opt"]); sched.load_state_dict(st["sched"])
+        start_ep, start_n, log, running = st["epoch"], st["n"], st["log"], st["running"]
+        print({"resumed_from": {"epoch": start_ep + 1, "step": start_n}}, flush=True)
+
+    def save(ep, n, running):
+        if not state_file:
+            return
+        os.makedirs(ckpt, exist_ok=True)
+        tmp = state_file + ".tmp"            # write then rename: a reset mid-save never corrupts the last checkpoint
+        torch.save({"adapter": get_peft_model_state_dict(model), "opt": opt.state_dict(), "sched": sched.state_dict(),
+                    "epoch": ep, "n": n, "log": log, "running": running}, tmp)
+        os.replace(tmp, state_file)
+
+    t0 = time.perf_counter()
+    for ep in range(start_ep, epochs):
+        model.train()
+        order = list(range(len(tr))); random.Random(seed * 1000 + ep).shuffle(order)   # same order after a resume
+        first = start_n if ep == start_ep else 0
+        if first == 0:
+            running = 0.0
+        for n in range(first, len(order)):
+            r = tr[order[n]]
             p_ids = tok(prompt(tok, r["text"]), add_special_tokens=False)["input_ids"]
             a_ids = tok(answer(r["labels"]) + tok.eos_token, add_special_tokens=False)["input_ids"]
             ids = torch.tensor([p_ids + a_ids], device=device())
@@ -89,12 +115,15 @@ def train(epochs=2, lr=2e-4, accum=8, seed=0, out="models/llm", limit=None):
             (loss / accum).backward(); running += loss.item()
             if (n + 1) % accum == 0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step(); sched.step(); opt.zero_grad()
+                if (n + 1) % ckpt_every < accum:
+                    save(ep, n + 1, running)
             if (n + 1) % 50 == 0 and device().type == "mps":
                 torch.mps.empty_cache()          # give cached GPU memory back so the Mac does not swap
             if (n + 1) % 50 == 0:
                 print({"epoch": ep + 1, "step": n + 1, "loss": round(running / (n + 1), 4),
                        "minutes": round((time.perf_counter() - t0) / 60, 1)}, flush=True)
         log.append({"epoch": ep + 1, "train_loss": round(running / len(tr), 4)})
+        save(ep + 1, 0, 0.0)
     merged = model.merge_and_unload()
     os.makedirs(out, exist_ok=True); merged.save_pretrained(out); tok.save_pretrained(out)
     return log
