@@ -7,3 +7,4 @@ callgrader-results.zip
 results/graded.jsonl
 results/*.log
 RESUME.md
+HANDOFF.md
